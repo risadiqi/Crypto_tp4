@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <cmath>  // For pow
+#include <cmath>  
 
 using namespace std;
 
@@ -35,7 +35,7 @@ public:
 
         for (size_t i = 0; i < input.size(); i++)
         {
-            if (isalpha(input[i]))  // Check if character is a letter
+            if (isalpha(input[i]))  
             {
                 char upperChar = toupper(input[i]);
                 tab[upperChar - 'A'].second++;
@@ -94,30 +94,27 @@ public:
     void calculdeChiSurSequences(const string& input, int period)
     {
         vector<string> sequences = SequenceDePeriod(input, period);
-        vector<pair<int, double>> resultatChi(sequences.size());  // Store best shift and chi-squared for each sequence
+        vector<pair<int, double>> resultatChi(sequences.size());  
 
         for (size_t i = 0; i < sequences.size(); i++)
         {
-            vector<pair<int, double>> tableau(26);  // Store chi-squared values for each shift (0-25)
+            vector<pair<int, double>> tableau(26);  
 
             for (int shift = 0; shift < 26; shift++)
             {
-                string shiftedSequence = applyShift(sequences[i], shift);  // Apply shift
-                
-                // Affichage pour voir chaque séquence après décalage
+                string shiftedSequence = applyShift(sequences[i], shift);  
                 cout << "Sequence " << i + 1 << " after shift " << shift << ": " << shiftedSequence << endl;
 
                 tableau[shift].first = shift;
-                tableau[shift].second = chiSquared(shiftedSequence);  // Calculate chi-squared value for shifted sequence
+                tableau[shift].second = chiSquared(shiftedSequence);  
             }
 
-            // Find the shift with the minimum chi-squared value
             auto minChi = min_element(tableau.begin(), tableau.end(), [](const pair<int, double>& a, const pair<int, double>& b) {
                 return a.second < b.second;
             });
 
-            resultatChi[i].first = minChi->first;  // Store the best shift
-            resultatChi[i].second = minChi->second;  // Store the best chi-squared value
+            resultatChi[i].first = minChi->first;  
+            resultatChi[i].second = minChi->second;  
         }
 
         for (size_t i = 0; i < resultatChi.size(); i++)
@@ -141,7 +138,7 @@ int main()
 
     VigenereCryptanalysis vc_en(english);
 
-    int period = 7;  // Example period
+    int period = 7;  
     vc_en.calculdeChiSurSequences("vptnvffuntshtarptymjwzirappljmhhqvsubwlzzygvtyitarptyiougxiuydtgzhhvvmum"
                                   "shwkzgstfmekvmpkswdgbilvjljmglmjfqwioiivknulvvfemioiemojtywdsajtwmtcgluy"
                                   "sdsumfbieugmvalvxkjduetukatymvkqzhvqvgvptytjwwldyeevquhlulwpkt", period);
