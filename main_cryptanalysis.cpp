@@ -15,14 +15,12 @@ class VigenereCryptanalysis
 {
 private:
     array<double, 26> targets;
-    array<double, 26> sortedTargets;
 
 public:
+
     VigenereCryptanalysis(const array<double, 26>& targetFreqs)
     {
         targets = targetFreqs;
-        sortedTargets = targets;
-        sort(sortedTargets.begin(), sortedTargets.end());
     }
 
     FreqArray Frequency(const string& input)
@@ -32,7 +30,6 @@ public:
         {
             tab[i] = make_pair('A' + i, 0);
         }
-
         for (size_t i = 0; i < input.size(); i++)
         {
             if (isalpha(input[i]))  
@@ -41,9 +38,64 @@ public:
                 tab[upperChar - 'A'].second++;
             }
         }
-
         return tab;
     }
+
+    double IndexIC(const string& input)
+    {
+        FreqArray tab = Frequency(input);
+        double IC = 0.0;
+        int n = input.size();
+        if (n > 1)
+        {
+            IC = 1.0 / (n * (n - 1));
+            double sum = 0.0;
+            for (int i = 0; i < 26; i++)
+            {
+                double freq = tab[i].second;
+                sum += freq * (freq - 1);
+            }
+            IC *= sum;
+        }
+        return IC;
+    }
+
+    vector<pair<double, double>> AvgIc(const string& input)
+    {
+        vector<pair<double, double>> averageIC(14);
+        for (int keyLength = 2; keyLength <= 15; keyLength++)
+        {
+            vector<string> sequences(keyLength, "");
+            double totalIC = 0.0;
+            for (size_t i = 0; i < input.size(); i++) 
+            {
+                sequences[i % keyLength] += input[i];
+            }
+            for (int i = 0; i < keyLength; i++)
+            {
+                totalIC += IndexIC(sequences[i]);
+            }
+            averageIC[keyLength - 2] = {keyLength, totalIC / keyLength};
+        }
+        return averageIC;
+    }
+
+    void periodFind(const string& input)
+    {
+        vector<pair<double, double>> IC = AvgIc(input); 
+        auto max1 = max_element(IC.begin(), IC.end(), [](const pair<double, double>& a, const pair<double, double>& b) {
+            return a.second < b.second;
+        });
+        cout << "max1 (key length): " << max1->first << " with IC: " << max1->second << endl;
+
+        IC.erase(max1); 
+
+        auto max2 = max_element(IC.begin(), IC.end(), [](const pair<double, double>& a, const pair<double, double>& b) {
+            return a.second < b.second;
+        });
+        cout << "max2 (key length): " << max2->first << " with IC: " << max2->second << endl;
+    }
+
 
     double chiSquared(const string& input)
     {
@@ -91,7 +143,7 @@ public:
     }
 
 
-    void calculdeChiSurSequences(const string& input, int period)
+    vector<pair<int, double>> calculdeChiSurSequences(const string& input, int period)
     {
         vector<string> sequences = SequenceDePeriod(input, period);
         vector<pair<int, double>> resultatChi(sequences.size());  
@@ -121,6 +173,20 @@ public:
         {
             std::cout << "Best shift for sequence " << i + 1 << ": " << resultatChi[i].first << " with chi-squared: " << resultatChi[i].second << std::endl;
         }
+
+        return resultatChi;
+    }
+
+
+    string reconstitutionKey(const string& input, int period)
+    {
+        vector<pair<int, double>> statChi = calculdeChiSurSequences(input, period);
+        string key(period, ' '); 
+        for (int i = 0; i < period; i++)
+        {
+            key[i] = 'A' + statChi[i].first; 
+        }
+        return key;
     }
 
 };
@@ -138,10 +204,15 @@ int main()
 
     VigenereCryptanalysis vc_en(english);
 
+    vc_en.periodFind("vptnvffuntshtarptymjwzirappljmhhqvsubwlzzygvtyitarptyiougxiuydtgzhhvvmum"
+                     "shwkzgstfmekvmpkswdgbilvjljmglmjfqwioiivknulvvfemioiemojtywdsajtwmtcgluy"
+                     "sdsumfbieugmvalvxkjduetukatymvkqzhvqvgvptytjwwldyeevquhlulwpkt");
+
+
     int period = 7;  
-    vc_en.calculdeChiSurSequences("vptnvffuntshtarptymjwzirappljmhhqvsubwlzzygvtyitarptyiougxiuydtgzhhvvmum"
+    cout << "Reconstructed key: " << vc_en.reconstitutionKey("vptnvffuntshtarptymjwzirappljmhhqvsubwlzzygvtyitarptyiougxiuydtgzhhvvmum"
                                   "shwkzgstfmekvmpkswdgbilvjljmglmjfqwioiivknulvvfemioiemojtywdsajtwmtcgluy"
-                                  "sdsumfbieugmvalvxkjduetukatymvkqzhvqvgvptytjwwldyeevquhlulwpkt", period);
+                                  "sdsumfbieugmvalvxkjduetukatymvkqzhvqvgvptytjwwldyeevquhlulwpkt", period) << endl;
 
     return 0;
 }
