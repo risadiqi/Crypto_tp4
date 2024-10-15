@@ -21,13 +21,13 @@ private:
 
 public:
 
-    // Constructeur qui initialise les fréquences cibles
+    // Constructeur : Initialise les fréquences cibles utilisées pour le test du chi-carré
     VigenereCryptanalysis(const array<double, 26>& targetFreqs)
     {
         targets = targetFreqs;
     }
 
-    // Fonction pour calculer la fréquence des lettres dans un texte donné
+    // Fonction "Frequency" : Calcule la fréquence des lettres dans un texte donné
     FreqArray Frequency(const string& input)
     {
         FreqArray tab;
@@ -36,7 +36,7 @@ public:
         {
             tab[i] = make_pair('A' + i, 0);
         }
-        // Parcourt du texte et comptage des occurrences de chaque lettre
+        // Parcourt le texte et compte les occurrences de chaque lettre
         for (size_t i = 0; i < input.size(); i++)
         {
             if (isalpha(input[i]))  // Vérifie si c'est une lettre
@@ -48,7 +48,8 @@ public:
         return tab;
     }
 
-    // Calcul de l'indice de coïncidence pour un texte donné
+    // Fonction "IndexIC" : Calcule l'indice de coïncidence d'un texte donné.
+    // Cet indice aide à déterminer si le texte est en clair ou chiffré et la longueur probable de la clé.
     double IndexIC(const string& input)
     {
         FreqArray tab = Frequency(input);
@@ -69,7 +70,8 @@ public:
         return IC;
     }
 
-    // Calcul de l'indice moyen de coïncidence pour différentes longueurs de clé (2 à 15)
+    // Fonction "AvgIc" : Calcule l'indice de coïncidence moyen pour différentes longueurs de clé (de 2 à 15).
+    // Cela permet d'estimer la longueur de la clé utilisée dans le chiffre de Vigenère.
     vector<pair<double, double>> AvgIc(const string& input)
     {
         vector<pair<double, double>> averageIC(14);
@@ -93,7 +95,7 @@ public:
         return averageIC;
     }
 
-    // Fonction pour déterminer la période probable de la clé en cherchant les meilleurs IC
+    // Fonction "periodFind" : Trouve la période probable de la clé en cherchant les meilleures valeurs d'indice de coïncidence (IC).
     void periodFind(const string& input)
     {
         vector<pair<double, double>> IC = AvgIc(input); 
@@ -111,7 +113,8 @@ public:
         cout << "max2 (key length): " << max2->first << " with IC: " << max2->second << endl;
     }
 
-    // Calcul du chi carré pour comparer les fréquences observées avec les fréquences attendues
+    // Fonction "chiSquared" : Calcule le test du chi-carré pour comparer les fréquences observées avec les fréquences attendues.
+    // Cela aide à évaluer la correspondance des lettres d'un texte chiffré avec une langue connue.
     double chiSquared(const string& input)
     {
         FreqArray tab = Frequency(input);
@@ -129,7 +132,8 @@ public:
         return chiSquaredValue;
     }
 
-    // Applique un décalage (shift) sur une séquence donnée
+    // Fonction "applyShift" : Applique un décalage de type César à une séquence donnée.
+    // Ce décalage est utilisé pour tester différentes clés sur les séquences du texte.
     string applyShift(const string& sequence, int shift) {
         string shiftedSequence = sequence;
         for (size_t k = 0; k < shiftedSequence.size(); k++) {
@@ -140,7 +144,8 @@ public:
         return shiftedSequence;
     }
 
-    // Sépare le texte en séquences selon la période donnée
+    // Fonction "SequenceDePeriod" : Sépare le texte chiffré en plusieurs séquences selon la période de la clé estimée.
+    // Chaque séquence correspond aux lettres qui ont été chiffrées avec la même lettre de la clé.
     vector<string> SequenceDePeriod(const string& input, int period)
     {
         vector<string> sequences(period);
@@ -157,7 +162,8 @@ public:
         return sequences;
     }
 
-    // Calcule le chi-carré pour chaque décalage sur les séquences et trouve le meilleur décalage
+    // Fonction "calculdeChiSurSequences" : Calcule le chi-carré pour chaque séquence après différents décalages.
+    // Elle identifie le meilleur décalage pour chaque séquence, ce qui correspond à une partie de la clé de Vigenère.
     vector<pair<int, double>> calculdeChiSurSequences(const string& input, int period)
     {
         vector<string> sequences = SequenceDePeriod(input, period);
@@ -195,7 +201,7 @@ public:
         return resultatChi;
     }
 
-    // Reconstitue la clé de chiffrement à partir du texte et de la période
+    // Fonction "reconstitutionKey" : Reconstitue la clé de chiffrement en utilisant les meilleurs décalages trouvés pour chaque séquence.
     string reconstitutionKey(const string& input, int period)
     {
         vector<pair<int, double>> statChi = calculdeChiSurSequences(input, period);
@@ -221,18 +227,17 @@ int main()
     0.01974, 0.00074
     };
 
-    // On crée un objet VigenereCryptanalysis avec les fréquences en anglais
+    // Création d'un objet VigenereCryptanalysis avec les fréquences en anglais
     VigenereCryptanalysis vc_en(english);
 
-    // On analyse le texte chiffré pour trouver la longueur de la clé
+    // Analyse du texte chiffré pour trouver la longueur de la clé
     vc_en.periodFind("vptnvffuntshtarptymjwzirappljmhhqvsubwlzzygvtyitarptyiougxiuydtgzhhvvmum"
                      "shwkzgstfmekvmpkswdgbilvjljmglmjfqwioiivknulvvfemioiemojtywdsajtwmtcgluy"
                      "sdsumfbieugmvalvxkjduetukatymvkqzhvqvgvptytjwwldyeevquhlulwpkt");
 
-    // La clé probable est 7, car les longueurs de clé avec les plus grands avg IC sont 14 et 7.
-    // Mais, 14 est un multiple de 7, ce qui suggère que la véritable longueur de la clé est 7.
+    // Supposons que la période trouvée soit 7
     int period = 7;  
-    // On reconstitue de la clé à partir du texte et de la période
+    // Reconstitution de la clé à partir du texte et de la période
     cout << "Reconstructed key: " << vc_en.reconstitutionKey("vptnvffuntshtarptymjwzirappljmhhqvsubwlzzygvtyitarptyiougxiuydtgzhhvvmum"
                                   "shwkzgstfmekvmpkswdgbilvjljmglmjfqwioiivknulvvfemioiemojtywdsajtwmtcgluy"
                                   "sdsumfbieugmvalvxkjduetukatymvkqzhvqvgvptytjwwldyeevquhlulwpkt", period) << endl;
